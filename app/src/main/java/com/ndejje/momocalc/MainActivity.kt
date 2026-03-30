@@ -31,6 +31,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun BrokenInput() {
+    // A standard Kotlin variable.
+    // It changes in memory, but Compose does not know it needs to redraw!
+    var amount = ""
+
+    TextField(
+        value = amount,
+        onValueChange = { amount = it },
+        label = { Text(stringResource(R.string.enter_amount)) }
+    )
+}
+
+@Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Hello $name!",
