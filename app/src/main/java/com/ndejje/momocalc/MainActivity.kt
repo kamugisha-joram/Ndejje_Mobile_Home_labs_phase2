@@ -41,6 +41,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -158,6 +159,7 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
         Text(
             text = "Select Network",
             style = MaterialTheme.typography.titleMedium,
+            color = currentThemeColor,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
@@ -187,7 +189,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                         tint = if (selectedNetwork == NetworkType.NONE) currentThemeColor else MaterialTheme.colorScheme.primary
                     )
                 }
-                Text("General (without tax)", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "General (without tax)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (selectedNetwork == NetworkType.NONE) Color(0xFF2196F3) else Color.Unspecified
+                )
             }
 
             Row(
@@ -218,7 +224,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                             modifier = Modifier.size(48.dp)
                         )
                     }
-                    Text("MTN", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "MTN",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (selectedNetwork == NetworkType.MTN) currentThemeColor else Color.Unspecified
+                    )
                 }
 
                 // Airtel Button
@@ -244,7 +254,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                             modifier = Modifier.size(48.dp)
                         )
                     }
-                    Text("Airtel", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "Airtel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (selectedNetwork == NetworkType.AIRTEL) currentThemeColor else Color.Unspecified
+                    )
                 }
             }
         }
@@ -260,7 +274,8 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
             Text(
                 text = "Calculate Max Withdrawal from Balance",
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                color = currentThemeColor
             )
             Spacer(modifier = Modifier.width(12.dp))
             Switch(
@@ -281,7 +296,8 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                 amountInput = it
             },
             label = if (isMaxWithdrawalMode) "Enter Current Balance (UGX)" else stringResource(R.string.enter_amount),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            activeColor = currentThemeColor
         )
         
         Spacer(modifier = Modifier.height(24.dp))
@@ -327,7 +343,7 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                         Text(
                             text = "Total Deducted: UGX ${String.format(Locale.getDefault(), "%.0f", result.total)}",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
+                            color = currentThemeColor
                         )
                     }
                 }
@@ -418,7 +434,8 @@ fun HoistedAmountInput(
     onAmountChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
-    label: String? = null
+    label: String? = null,
+    activeColor: Color = MaterialTheme.colorScheme.primary
 ) {
     TextField(
         value = amount,
@@ -428,7 +445,12 @@ fun HoistedAmountInput(
             Text(label ?: stringResource(if (isError) R.string.error_numbers_only else R.string.enter_amount))
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = modifier
+        modifier = modifier,
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = activeColor,
+            focusedLabelColor = activeColor,
+            cursorColor = activeColor
+        )
     )
 }
 
