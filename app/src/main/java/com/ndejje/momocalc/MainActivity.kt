@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,7 +114,12 @@ fun MoMoTopBar(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
                     contentDescription = "Toggle Theme"
                 )
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color(0xFF2196F3),
+            titleContentColor = Color.White,
+            actionIconContentColor = Color.White
+        )
     )
 }
 
