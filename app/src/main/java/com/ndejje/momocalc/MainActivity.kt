@@ -450,6 +450,18 @@ fun HoistedAmountInput(
         label = {
             Text(label ?: stringResource(if (isError) R.string.error_numbers_only else R.string.enter_amount))
         },
+        trailingIcon = {
+            if (amount.isNotEmpty()) {
+                IconButton(onClick = { onAmountChange("") }) {
+                    Text(
+                        text = "x",
+                        color = activeColor,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier,
         colors = TextFieldDefaults.colors(
