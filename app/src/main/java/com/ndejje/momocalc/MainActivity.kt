@@ -6,9 +6,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,9 +35,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -48,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -127,12 +131,22 @@ data class MaxWithdrawalInfo(
 fun MoMoCalcScreen(modifier: Modifier = Modifier) {
     var amountInput by rememberSaveable { mutableStateOf("") }
     var selectedNetwork by rememberSaveable { mutableStateOf(NetworkType.NONE) }
-    var maxWithdrawalResult by rememberSaveable { mutableStateOf<MaxWithdrawalInfo?>(null) }
+    var isMaxWithdrawalMode by rememberSaveable { mutableStateOf(false) }
     
     val amount = amountInput.toDoubleOrNull() ?: 0.0
+    val maxWithdrawalResult = if (isMaxWithdrawalMode && amount > 0) {
+        calculateMaxWithdrawal(amount, selectedNetwork != NetworkType.NONE)
+    } else null
+
     val baseFee = calculateWithdrawalFee(amount)
     val tax = if (amount > 0 && selectedNetwork != NetworkType.NONE) amount * 0.005 else 0.0
     val totalCharge = if (amount > 0) baseFee + tax else 0.0
+
+    val currentThemeColor = when (selectedNetwork) {
+        NetworkType.MTN -> Color(0xFFFFCB05) // MTN Yellow
+        NetworkType.AIRTEL -> Color(0xFFED1C24) // Airtel Red
+        else -> Color(0xFF2196F3) // Blue
+    }
 
     Column(
         modifier = modifier
@@ -147,90 +161,132 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // General (Default) Button
+        // Network Selection
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // General Option
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { selectedNetwork = NetworkType.NONE }
+                modifier = Modifier
+                    .clickable { selectedNetwork = NetworkType.NONE }
+                    .padding(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Payments,
-                    contentDescription = "General",
-                    modifier = Modifier.size(60.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                RadioButton(
-                    selected = selectedNetwork == NetworkType.NONE,
-                    onClick = { selectedNetwork = NetworkType.NONE }
-                )
-                Text("General")
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .then(
+                            if (selectedNetwork == NetworkType.NONE) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                            else Modifier
+                        )
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Payments,
+                        contentDescription = "General",
+                        modifier = Modifier.size(48.dp),
+                        tint = if (selectedNetwork == NetworkType.NONE) currentThemeColor else MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text("General (without tax)", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // MTN Button
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { selectedNetwork = NetworkType.MTN }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.mtn),
-                    contentDescription = "MTN",
-                    modifier = Modifier.size(60.dp)
-                )
-                RadioButton(
-                    selected = selectedNetwork == NetworkType.MTN,
-                    onClick = { selectedNetwork = NetworkType.MTN }
-                )
-                Text("MTN")
-            }
+                // MTN Button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clickable { selectedNetwork = NetworkType.MTN }
+                        .padding(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .then(
+                                if (selectedNetwork == NetworkType.MTN) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                                else Modifier
+                            )
+                            .padding(4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.mtn),
+                            contentDescription = "MTN",
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                    Text("MTN", style = MaterialTheme.typography.bodyMedium)
+                }
 
-            // Airtel Button
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { selectedNetwork = NetworkType.AIRTEL }
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.aitel),
-                    contentDescription = "Airtel",
-                    modifier = Modifier.size(60.dp)
-                )
-                RadioButton(
-                    selected = selectedNetwork == NetworkType.AIRTEL,
-                    onClick = { selectedNetwork = NetworkType.AIRTEL }
-                )
-                Text("Airtel")
+                // Airtel Button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clickable { selectedNetwork = NetworkType.AIRTEL }
+                        .padding(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .then(
+                                if (selectedNetwork == NetworkType.AIRTEL) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                                else Modifier
+                            )
+                            .padding(4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.aitel),
+                            contentDescription = "Airtel",
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                    Text("Airtel", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Max Withdrawal Switch
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Calculate Max Withdrawal from Balance",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Switch(
+                checked = isMaxWithdrawalMode,
+                onCheckedChange = { isMaxWithdrawalMode = it },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = currentThemeColor,
+                    checkedTrackColor = currentThemeColor.copy(alpha = 0.5f)
+                )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         HoistedAmountInput(
             amount = amountInput,
             onAmountChange = { 
                 amountInput = it
-                maxWithdrawalResult = null // Reset result when input changes
             },
+            label = if (isMaxWithdrawalMode) "Enter Current Balance (UGX)" else stringResource(R.string.enter_amount),
             modifier = Modifier.fillMaxWidth()
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                val balance = amountInput.toDoubleOrNull() ?: 0.0
-                maxWithdrawalResult = calculateMaxWithdrawal(balance, selectedNetwork != NetworkType.NONE)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Calculate Max Withdrawal from this Balance")
-        }
-        
         Spacer(modifier = Modifier.height(24.dp))
         
-        if (maxWithdrawalResult == null) {
+        if (!isMaxWithdrawalMode) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start
@@ -247,7 +303,7 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = "Total Charge: UGX ${String.format(Locale.getDefault(), "%.0f", totalCharge)}",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = currentThemeColor,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -274,6 +330,10 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                }
+            } ?: run {
+                if (amountInput.isNotEmpty()) {
+                    Text("Please enter a valid amount", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -357,14 +417,15 @@ fun HoistedAmountInput(
     amount: String,
     onAmountChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    isError: Boolean = false
+    isError: Boolean = false,
+    label: String? = null
 ) {
     TextField(
         value = amount,
         onValueChange = onAmountChange,
         isError = isError,
         label = {
-            Text(stringResource(if (isError) R.string.error_numbers_only else R.string.enter_amount))
+            Text(label ?: stringResource(if (isError) R.string.error_numbers_only else R.string.enter_amount))
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier
