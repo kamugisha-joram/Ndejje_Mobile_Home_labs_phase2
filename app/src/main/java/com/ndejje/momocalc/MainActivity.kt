@@ -4,15 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,9 +29,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -59,27 +68,110 @@ fun MoMoTopBar() {
     )
 }
 
+enum class NetworkType {
+    MTN, AIRTEL
+}
+
 @Composable
 fun MoMoCalcScreen(modifier: Modifier = Modifier) {
     var amountInput by remember { mutableStateOf("") }
+    var selectedNetwork by remember { mutableStateOf(NetworkType.MTN) }
+    
     val amount = amountInput.toDoubleOrNull() ?: 0.0
-    val fee = calculateWithdrawalFee(amount)
+    val baseFee = calculateWithdrawalFee(amount)
+    val tax = if (amount > 0) amount * 0.005 else 0.0
+    val totalCharge = if (amount > 0) baseFee + tax else 0.0
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.icn),
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .padding(bottom = 16.dp)
+        )
+
+        Text(
+            text = "Select Network",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // MTN Button
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { selectedNetwork = NetworkType.MTN }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.mtn),
+                    contentDescription = "MTN",
+                    modifier = Modifier.size(60.dp)
+                )
+                RadioButton(
+                    selected = selectedNetwork == NetworkType.MTN,
+                    onClick = { selectedNetwork = NetworkType.MTN }
+                )
+                Text("MTN")
+            }
+
+            // Airtel Button
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { selectedNetwork = NetworkType.AIRTEL }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.aitel),
+                    contentDescription = "Airtel",
+                    modifier = Modifier.size(60.dp)
+                )
+                RadioButton(
+                    selected = selectedNetwork == NetworkType.AIRTEL,
+                    onClick = { selectedNetwork = NetworkType.AIRTEL }
+                )
+                Text("Airtel")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         HoistedAmountInput(
             amount = amountInput,
             onAmountChange = { amountInput = it },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.fee_label, fee.toString()),
-            style = MaterialTheme.typography.headlineMedium
-        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = "Withdrawal Fee: UGX ${String.format("%.0f", baseFee)}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = "Mobile Money Tax (0.5%): UGX ${String.format("%.0f", tax)}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Total Charge: UGX ${String.format("%.0f", totalCharge)}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
