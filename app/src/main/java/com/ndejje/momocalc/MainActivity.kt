@@ -1,11 +1,13 @@
 package com.ndejje.momocalc
 
+import java.util.Locale
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +17,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -28,10 +42,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,10 +60,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MoMoAppTheme {                        // our custom theme (Part B)
+            val systemInDarkTheme = isSystemInDarkTheme()
+            var isDarkTheme by rememberSaveable { mutableStateOf(systemInDarkTheme) }
+
+            MoMoAppTheme(darkTheme = isDarkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Scaffold(
-                        topBar = { MoMoTopBar() }
+                        topBar = {
+                            MoMoTopBar(
+                                isDarkTheme = isDarkTheme,
+                                onThemeToggle = { isDarkTheme = !isDarkTheme }
+                            )
+                        }
                     ) { innerPadding ->
                         MoMoCalcScreen(
                             modifier = Modifier.padding(innerPadding)
@@ -62,9 +85,29 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoMoTopBar() {
+fun MoMoTopBar(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
     TopAppBar(
-        title = { Text(stringResource(R.string.app_title)) }
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(id = R.drawable.icn),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(stringResource(R.string.app_title))
+            }
+        },
+        actions = {
+            IconButton(onClick = onThemeToggle) {
+                Icon(
+                    imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = "Toggle Theme"
+                )
+            }
+        }
     )
 }
 
@@ -72,10 +115,18 @@ enum class NetworkType {
     MTN, AIRTEL
 }
 
+data class MaxWithdrawalInfo(
+    val withdrawalAmount: Double,
+    val fee: Double,
+    val tax: Double,
+    val total: Double
+) : java.io.Serializable
+
 @Composable
 fun MoMoCalcScreen(modifier: Modifier = Modifier) {
-    var amountInput by remember { mutableStateOf("") }
-    var selectedNetwork by remember { mutableStateOf(NetworkType.MTN) }
+    var amountInput by rememberSaveable { mutableStateOf("") }
+    var selectedNetwork by rememberSaveable { mutableStateOf(NetworkType.MTN) }
+    var maxWithdrawalResult by rememberSaveable { mutableStateOf<MaxWithdrawalInfo?>(null) }
     
     val amount = amountInput.toDoubleOrNull() ?: 0.0
     val baseFee = calculateWithdrawalFee(amount)
@@ -85,17 +136,10 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.icn),
-            contentDescription = null,
-            modifier = Modifier
-                .size(80.dp)
-                .padding(bottom = 16.dp)
-        )
-
         Text(
             text = "Select Network",
             style = MaterialTheme.typography.titleMedium,
@@ -146,33 +190,111 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
 
         HoistedAmountInput(
             amount = amountInput,
-            onAmountChange = { amountInput = it },
+            onAmountChange = { 
+                amountInput = it
+                maxWithdrawalResult = null // Reset result when input changes
+            },
             modifier = Modifier.fillMaxWidth()
         )
         
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val balance = amountInput.toDoubleOrNull() ?: 0.0
+                maxWithdrawalResult = calculateMaxWithdrawal(balance)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Calculate Max Withdrawal from this Balance")
+        }
+        
         Spacer(modifier = Modifier.height(24.dp))
         
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = "Withdrawal Fee: UGX ${String.format("%.0f", baseFee)}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Text(
-                text = "Mobile Money Tax (0.5%): UGX ${String.format("%.0f", tax)}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Total Charge: UGX ${String.format("%.0f", totalCharge)}",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+        if (maxWithdrawalResult == null) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", baseFee)}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Mobile Money Tax (0.5%): UGX ${String.format(Locale.getDefault(), "%.0f", tax)}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Total Charge: UGX ${String.format(Locale.getDefault(), "%.0f", totalCharge)}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else {
+            maxWithdrawalResult?.let { result ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Maximum Withdrawal Details",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text("You can withdraw: UGX ${String.format(Locale.getDefault(), "%.0f", result.withdrawalAmount)}", fontWeight = FontWeight.Bold)
+                        Text("Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", result.fee)}")
+                        Text("Mobile Money Tax: UGX ${String.format(Locale.getDefault(), "%.0f", result.tax)}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Total Deducted: UGX ${String.format(Locale.getDefault(), "%.0f", result.total)}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun calculateMaxWithdrawal(balance: Double): MaxWithdrawalInfo {
+    // Fee brackets based on calculateWithdrawalFee logic
+    val brackets = listOf(
+        4000001.0 to 20000.0,
+        2000001.0 to 18000.0,
+        1000001.0 to 15000.0,
+        500001.0 to 12500.0,
+        250001.0 to 7000.0,
+        125001.0 to 3575.0,
+        60001.0 to 1925.0,
+        45001.0 to 1500.0,
+        30001.0 to 1000.0,
+        15001.0 to 800.0,
+        5001.0 to 700.0,
+        2501.0 to 440.0,
+        0.0 to 330.0
+    )
+
+    for ((minAmount, fee) in brackets) {
+        // Formula: Withdrawal + Fee + (Withdrawal * 0.005) <= Balance
+        // 1.005 * Withdrawal + Fee <= Balance
+        // Withdrawal <= (Balance - Fee) / 1.005
+        val possibleWithdrawal = (balance - fee) / 1.005
+        if (possibleWithdrawal >= minAmount) {
+            val tax = possibleWithdrawal * 0.005
+            return MaxWithdrawalInfo(
+                withdrawalAmount = possibleWithdrawal,
+                fee = fee,
+                tax = tax,
+                total = possibleWithdrawal + fee + tax
             )
         }
     }
+    return MaxWithdrawalInfo(0.0, 0.0, 0.0, 0.0)
 }
 
 private fun calculateWithdrawalFee(amount: Double): Double {
@@ -213,8 +335,8 @@ fun InternalStateInput() {
 fun HoistedAmountInput(
     amount: String,
     onAmountChange: (String) -> Unit,
-    isError: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
 ) {
     TextField(
         value = amount,
@@ -255,4 +377,3 @@ fun PreviewFilled() {
 fun PreviewError() {
     HoistedAmountInput(amount = "abc", onAmountChange = {}, isError = true)
 }
-
