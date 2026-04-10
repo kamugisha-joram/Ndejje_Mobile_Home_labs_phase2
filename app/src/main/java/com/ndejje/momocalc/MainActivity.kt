@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -112,7 +113,7 @@ fun MoMoTopBar(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
 }
 
 enum class NetworkType {
-    MTN, AIRTEL
+    NONE, MTN, AIRTEL
 }
 
 data class MaxWithdrawalInfo(
@@ -125,12 +126,12 @@ data class MaxWithdrawalInfo(
 @Composable
 fun MoMoCalcScreen(modifier: Modifier = Modifier) {
     var amountInput by rememberSaveable { mutableStateOf("") }
-    var selectedNetwork by rememberSaveable { mutableStateOf(NetworkType.MTN) }
+    var selectedNetwork by rememberSaveable { mutableStateOf(NetworkType.NONE) }
     var maxWithdrawalResult by rememberSaveable { mutableStateOf<MaxWithdrawalInfo?>(null) }
     
     val amount = amountInput.toDoubleOrNull() ?: 0.0
     val baseFee = calculateWithdrawalFee(amount)
-    val tax = if (amount > 0) amount * 0.005 else 0.0
+    val tax = if (amount > 0 && selectedNetwork != NetworkType.NONE) amount * 0.005 else 0.0
     val totalCharge = if (amount > 0) baseFee + tax else 0.0
 
     Column(
@@ -151,6 +152,24 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // General (Default) Button
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { selectedNetwork = NetworkType.NONE }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Payments,
+                    contentDescription = "General",
+                    modifier = Modifier.size(60.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                RadioButton(
+                    selected = selectedNetwork == NetworkType.NONE,
+                    onClick = { selectedNetwork = NetworkType.NONE }
+                )
+                Text("General")
+            }
+
             // MTN Button
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -202,7 +221,7 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
         Button(
             onClick = {
                 val balance = amountInput.toDoubleOrNull() ?: 0.0
-                maxWithdrawalResult = calculateMaxWithdrawal(balance)
+                maxWithdrawalResult = calculateMaxWithdrawal(balance, selectedNetwork != NetworkType.NONE)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -261,7 +280,7 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
     }
 }
 
-private fun calculateMaxWithdrawal(balance: Double): MaxWithdrawalInfo {
+private fun calculateMaxWithdrawal(balance: Double, includeTax: Boolean): MaxWithdrawalInfo {
     // Fee brackets based on calculateWithdrawalFee logic
     val brackets = listOf(
         4000001.0 to 20000.0,
@@ -279,13 +298,15 @@ private fun calculateMaxWithdrawal(balance: Double): MaxWithdrawalInfo {
         0.0 to 330.0
     )
 
+    val taxMultiplier = if (includeTax) 1.005 else 1.0
+
     for ((minAmount, fee) in brackets) {
-        // Formula: Withdrawal + Fee + (Withdrawal * 0.005) <= Balance
-        // 1.005 * Withdrawal + Fee <= Balance
-        // Withdrawal <= (Balance - Fee) / 1.005
-        val possibleWithdrawal = (balance - fee) / 1.005
+        // Formula: Withdrawal + Fee + (Withdrawal * 0.005) <= Balance if includeTax
+        // taxMultiplier * Withdrawal + Fee <= Balance
+        // Withdrawal <= (Balance - Fee) / taxMultiplier
+        val possibleWithdrawal = (balance - fee) / taxMultiplier
         if (possibleWithdrawal >= minAmount) {
-            val tax = possibleWithdrawal * 0.005
+            val tax = if (includeTax) possibleWithdrawal * 0.005 else 0.0
             return MaxWithdrawalInfo(
                 withdrawalAmount = possibleWithdrawal,
                 fee = fee,
