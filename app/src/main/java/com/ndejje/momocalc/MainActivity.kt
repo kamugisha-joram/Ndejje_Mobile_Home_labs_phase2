@@ -68,18 +68,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val systemInDarkTheme = isSystemInDarkTheme()
-            var isDarkTheme by rememberSaveable { mutableStateOf(systemInDarkTheme) }
-
-            MoMoAppTheme(darkTheme = isDarkTheme) {
+            MoMoAppTheme {                        // our custom theme (Part B)
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Scaffold(
-                        topBar = {
-                            MoMoTopBar(
-                                isDarkTheme = isDarkTheme,
-                                onThemeToggle = { isDarkTheme = !isDarkTheme }
-                            )
-                        }
+                        topBar = { MoMoTopBar() }
                     ) { innerPadding ->
                         MoMoCalcScreen(
                             modifier = Modifier.padding(innerPadding)
