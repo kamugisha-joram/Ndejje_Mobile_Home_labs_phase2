@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ndejje.momocalc.ui.theme.MoMoAppTheme
+import kotlin.math.round
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -182,7 +183,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .size(60.dp)
                         .then(
-                            if (selectedNetwork == NetworkType.NONE) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                            if (selectedNetwork == NetworkType.NONE) Modifier.border(
+                                2.dp,
+                                currentThemeColor,
+                                RoundedCornerShape(8.dp)
+                            )
                             else Modifier
                         )
                         .padding(4.dp),
@@ -218,7 +223,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(60.dp)
                             .then(
-                                if (selectedNetwork == NetworkType.MTN) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                                if (selectedNetwork == NetworkType.MTN) Modifier.border(
+                                    2.dp,
+                                    currentThemeColor,
+                                    RoundedCornerShape(8.dp)
+                                )
                                 else Modifier
                             )
                             .padding(4.dp),
@@ -248,7 +257,11 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                         modifier = Modifier
                             .size(60.dp)
                             .then(
-                                if (selectedNetwork == NetworkType.AIRTEL) Modifier.border(2.dp, currentThemeColor, RoundedCornerShape(8.dp))
+                                if (selectedNetwork == NetworkType.AIRTEL) Modifier.border(
+                                    2.dp,
+                                    currentThemeColor,
+                                    RoundedCornerShape(8.dp)
+                                )
                                 else Modifier
                             )
                             .padding(4.dp),
@@ -474,28 +487,28 @@ fun HoistedAmountInput(
 
 
 
-@Preview(showBackground = true)
+/* @Preview(showBackground = true)
 @Composable
 fun Preview() {
     MoMoAppTheme {
         InternalStateInput()
     }
-}
+} */
 
-@Preview(showBackground = true, name = "Empty State")
+/* @Preview(showBackground = true, name = "Empty State")
 @Composable
 fun PreviewEmpty() {
     HoistedAmountInput(amount = "", onAmountChange = {})
-}
+} */
 
-@Preview(showBackground = true, name = "Filled State")
+/* @Preview(showBackground = true, name = "Filled State")
 @Composable
 fun PreviewFilled() {
     HoistedAmountInput(amount = "50000", onAmountChange = {})
-}
+} */
 
-@Preview(showBackground = true, name = "Error State")
+ /* @Preview(showBackground = true, name = "Error State")
 @Composable
 fun PreviewError() {
     HoistedAmountInput(amount = "abc", onAmountChange = {}, isError = true)
-}
+} */
