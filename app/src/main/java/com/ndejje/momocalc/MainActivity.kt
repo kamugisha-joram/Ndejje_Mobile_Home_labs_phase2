@@ -1,5 +1,6 @@
 package com.ndejje.momocalc
 
+import android.content.res.Configuration
 import java.util.Locale
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -313,25 +314,31 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(24.dp))
         
         if (!isMaxWithdrawalMode) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = currentThemeColor.copy(alpha = 0.1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", baseFee)}",
-                    style = displayTextStyle
-                )
-                Text(
-                    text = "Mobile Money Tax (0.5%): UGX ${String.format(Locale.getDefault(), "%.0f", tax)}",
-                    style = displayTextStyle
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Total Charge: UGX ${String.format(Locale.getDefault(), "%.0f", totalCharge)}",
-                    style = totalLabelStyle,
-                    color = currentThemeColor,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", baseFee)}",
+                        style = displayTextStyle
+                    )
+                    Text(
+                        text = "Mobile Money Tax (0.5%): UGX ${String.format(Locale.getDefault(), "%.0f", tax)}",
+                        style = displayTextStyle
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Total Charge: UGX ${String.format(Locale.getDefault(), "%.0f", totalCharge)}",
+                        style = totalLabelStyle,
+                        color = currentThemeColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         } else {
             maxWithdrawalResult?.let { result ->
@@ -503,3 +510,38 @@ fun PreviewFilled() {
 fun PreviewError() {
     HoistedAmountInput(amount = "abc", onAmountChange = {}, isError = true)
 } */
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+fun PreviewLight() {
+    MoMoAppTheme(darkTheme = false) {
+        MoMoCalcScreen()
+    }
+}
+
+@Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewDark() {
+    MoMoAppTheme(darkTheme = true) {
+        MoMoCalcScreen()
+    }
+}
+
+@Preview(name = "Fee Card – Light", showBackground = true)
+@Preview(
+    name = "Fee Card – Dark",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun PreviewFeeCard() {
+    MoMoAppTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            MoMoCalcScreen()
+        }
+    }
+}
