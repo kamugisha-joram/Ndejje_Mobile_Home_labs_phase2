@@ -56,11 +56,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ndejje.momocalc.ui.theme.MoMoAppTheme
+import com.ndejje.momocalc.MoMoAppTheme
 import kotlin.math.round
 
 class MainActivity : ComponentActivity() {
@@ -68,14 +72,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MoMoAppTheme {                        // our custom theme (Part B)
+            MoMoAppTheme {         // ← replaces raw MaterialTheme(...)
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    Scaffold(
-                        topBar = { MoMoTopBar() }
-                    ) { innerPadding ->
-                        MoMoCalcScreen(
-                            modifier = Modifier.padding(innerPadding)
-                        )
+                    Scaffold(topBar = { MoMoTopBar() }) { innerPadding ->
+                        MoMoCalcScreen(modifier = Modifier.padding(innerPadding))
                     }
                 }
             }
@@ -85,33 +85,29 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoMoTopBar(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
-    TopAppBar(
+fun MoMoTopBar() {
+    CenterAlignedTopAppBar(
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.icn),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.app_title))
-            }
+            Text(
+                text = stringResource(R.string.app_title),
+                style = MaterialTheme.typography.headlineMedium
+            )
         },
-        actions = {
-            IconButton(onClick = onThemeToggle) {
-                Icon(
-                    imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = "Toggle Theme"
-                )
-            }
+        navigationIcon = {
+            Image(
+                painter = painterResource(id = R.drawable.icn),
+                contentDescription = "MoMo Logo",
+                modifier = Modifier
+                    .padding(start = dimensionResource(R.dimen.spacing_medium))
+                    .height(32.dp)
+                    .wrapContentWidth(),
+                contentScale = ContentScale.Fit
+            )
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF2196F3),
-            titleContentColor = Color.White,
-            actionIconContentColor = Color.White
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
         )
     )
 }
@@ -148,16 +144,19 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
         else -> Color(0xFF2196F3) // Blue
     }
 
+    val displayTextStyle = MaterialTheme.typography.bodyLarge
+    val totalLabelStyle = MaterialTheme.typography.headlineMedium
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(dimensionResource(R.dimen.screen_padding)),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Select Network",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = currentThemeColor,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -320,16 +319,16 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", baseFee)}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = displayTextStyle
                 )
                 Text(
                     text = "Mobile Money Tax (0.5%): UGX ${String.format(Locale.getDefault(), "%.0f", tax)}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = displayTextStyle
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Total Charge: UGX ${String.format(Locale.getDefault(), "%.0f", totalCharge)}",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = totalLabelStyle,
                     color = currentThemeColor,
                     fontWeight = FontWeight.Bold
                 )
@@ -343,24 +342,24 @@ fun MoMoCalcScreen(modifier: Modifier = Modifier) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Maximum Withdrawal Details",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        Text("You can withdraw: UGX ${String.format(Locale.getDefault(), "%.0f", result.withdrawalAmount)}", fontWeight = FontWeight.Bold)
-                        Text("Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", result.fee)}")
-                        Text("Mobile Money Tax: UGX ${String.format(Locale.getDefault(), "%.0f", result.tax)}")
+                        Text("You can withdraw: UGX ${String.format(Locale.getDefault(), "%.0f", result.withdrawalAmount)}", style = displayTextStyle, fontWeight = FontWeight.Bold)
+                        Text("Withdrawal Fee: UGX ${String.format(Locale.getDefault(), "%.0f", result.fee)}", style = displayTextStyle)
+                        Text("Mobile Money Tax: UGX ${String.format(Locale.getDefault(), "%.0f", result.tax)}", style = displayTextStyle)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Total Deducted: UGX ${String.format(Locale.getDefault(), "%.0f", result.total)}",
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = displayTextStyle,
                             color = currentThemeColor
                         )
                     }
                 }
             } ?: run {
                 if (amountInput.isNotEmpty()) {
-                    Text("Please enter a valid amount", color = MaterialTheme.colorScheme.error)
+                    Text("Please enter a valid amount", color = MaterialTheme.colorScheme.error, style = displayTextStyle)
                 }
             }
         }
